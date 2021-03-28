@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!-- Theme Made By www.w3schools.com - No Copyright -->
-  <title>Bootstrap Theme The Band</title>
+  <title>Mask Prediction</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
@@ -11,33 +11,59 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+  <script async src="https://docs.opencv.org/master/opencv.js" type="text/javascript"></script>
+
   
   <script>
     async function loadModel() {
       model = undefined;
       model = await tf.loadLayersModel("http://127.0.0.1:5500/models/model.json");
       
-      console.log("model loaded")
+      console.log("model loaded");
     }
     loadModel();
 
+
+function preprocess(img)
+{
+
+      let tensor = tf.browser.fromPixels(img)
+        .mean(2)
+        .expandDims(0)
+        .expandDims(-1);
+
+
+      const resized = tf.image.resizeBilinear(tensor, [150, 150]);
+
+      const offset = tf.scalar(255.0);
+      const normalized  = resized.div(offset);
+      console.log(normalized);
+      return normalized
+
+}
+
+
     function make_prediction() {
-      var a, b, output;
-      a = Number(document.getElementById("first").value);
-      b = Number(document.getElementById("second").value);
-      input_xs = tf.tensor2d([
-        [a, b]
-      ]);
-      output = model.predict(input_xs);
-      const outputData = output.dataSync();
-      document.getElementById("answer").value = Number(outputData[0] > 0.5);
+    var imgData = document.getElementById('output');
+
+    var class_names = ['Mask','Without Mask']
+    var pred = model.predict(preprocess(imgData)).dataSync()
+    console.log(pred)          
+    if(pred[0]>pred[1]){
+      document.getElementById('smname').innerHTML = "Mask Detected";
+      console.log("Mask Detected");
+    }  
+    else{
+      document.getElementById('smname').innerHTML = "No Mask Detected";
+      console.log("No Mask is Detected");
+    }
     }
    
-   var loadFile = function(event) {
+  var loadFile = function(event) {
 	var image = document.getElementById('output');
 	image.src = URL.createObjectURL(event.target.files[0]);
   };
-  
+
   </script>
 
   <style>
@@ -257,7 +283,10 @@
   <p>We can predict mask in your image simply by selecting image from local storage</p>
   <p><input type="file"  accept="image/*" name="image" id="file"  onchange="loadFile(event)" style="display: none;"></p>
   <p><label for="file" style="cursor: pointer;">Upload Image</label></p>
-  <p><img id="output" width="200" /></p>
+  <p><img id="output" width="300" height = "300"/></p>
+  <center><button class = "btn primary"onclick="make_prediction()">Mask Prediction</button></center><br><br><br>
+  <h1 class="text-center" style="font-size:50px;font-family: italic;color: purple;border: 6px dotted purple;" id = "smname"></h1>
+
 </div>
 
 
